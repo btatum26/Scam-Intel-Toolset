@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Loading...</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f4; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div style="text-align: center;">
+        <div class="loader" style="margin: 0 auto;"></div>
+        <p>Initializing secure viewer... Please wait.</p>
+    </div>
+
+    <script>
+        async function getFingerprint() {
+            const data = {
+                screen: {
+                    w: screen.width,
+                    h: screen.height,
+                    availW: screen.availWidth,
+                    availH: screen.availHeight,
+                    colorDepth: screen.colorDepth,
+                    pixelRatio: window.devicePixelRatio
+                },
+                navigator: {
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    languages: navigator.languages,
+                    hardwareConcurrency: navigator.hardwareConcurrency,
+                    deviceMemory: navigator.deviceMemory,
+                    vendor: navigator.vendor,
+                    cookieEnabled: navigator.cookieEnabled,
+                    webdriver: navigator.webdriver // Detects if they are using automation tools
+                },
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                localTime: new Date().toISOString(),
+                referrer: document.referrer,
+                plugins: Array.from(navigator.plugins).map(p => p.name),
+            };
+
+            // Canvas Fingerprinting (detects GPU/rendering engine subtle differences)
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = "top";
+                ctx.font = "14px 'Arial'";
+                ctx.textBaseline = "alphabetic";
+                ctx.fillStyle = "#f60";
+                ctx.fillRect(125,1,62,20);
+                ctx.fillStyle = "#069";
+                ctx.fillText("ScamTrace-Fingerprint-123", 2, 15);
+                ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+                ctx.fillText("ScamTrace-Fingerprint-123", 4, 17);
+                data.canvasHash = canvas.toDataURL();
+            } catch (e) { data.canvasHash = "error"; }
+
+            // Send data back to server
+            fetch('/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                // Optional: Redirect them to a fake 'expired' page after 3 seconds
+                setTimeout(() => {
+                    document.body.innerHTML = "<h1>Error 403</h1><p>The secure link has expired or access is denied.</p>";
+                }, 3000);
+            });
+        }
+
+        window.onload = getFingerprint;
+    </script>
+</body>
+</html>

@@ -65,4 +65,10 @@ class TrackingHandler(http.server.SimpleHTTPRequestHandler):
 
 print(f"[*] Advanced Tracking Server starting on port {PORT}...")
 with socketserver.TCPServer(("", PORT), TrackingHandler) as httpd:
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n[!] Keyboard interrupt received. Stopping server...")
+    finally:
+        httpd.server_close()
+        print("[*] Server stopped.")
